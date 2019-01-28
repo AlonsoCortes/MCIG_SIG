@@ -1,0 +1,110 @@
+--PUNTO EXTRA: ¿Cuántas personas no viven a 500 metros de una estación de metro?
+--Hint: Tienes que sumar el resultado de la expresión de arriba y restarla de la población total
+--como es el primer quiz, puedes hacerlo en dos querys
+
+create table estacionesmetro_datos_pob as
+select foo.* from
+(with buf as (select st_buffer(estaciones_metro.geom,500.0) as geom , estaciones_metro.nombreesta as estacion from estaciones_metro)
+select sum(manzanas_zmvm.pob1), buf.estacion from manzanas_zmvm join buf on
+st_intersects(buf.geom,manzanas_zmvm.geom)
+group by buf.estacion) as foo;
+
+select sum(pob_500m)
+from estacionesmetro_datos_pob_
+
+select sum(pob1)
+from manzanas_zmvm
+
+Población total:  8,810,452 
+Población a 500m de una estación del metro:  2,520,420 
+Población más allá de 500m del metro:  6,290,032 
+
+--EJERCICIO # 1.- En los datos del Censo encontrarás shapes con las calles del DF y del Estado de México, así como de las
+--AGEBS.
+-- Agrega estos shapes como capas en Postgis y repite los pasos 1 a 6 de este archivo para obtener un corte
+-- de las calles y de las AGEBS con la forma de la ZMVM en una tabla indexada espacialmente y con llave primaria (PK)
+ ALTER TABLE ageb_merge
+   ALTER COLUMN geom
+   TYPE Geometry(MultiPolygon, 32614)
+   USING ST_Transform(geom, 32614);
+   
+    ALTER TABLE calles_merge
+   ALTER COLUMN geom
+   TYPE Geometry(MultiLineString, 32614)
+   USING ST_Transform(geom, 32614);
+   
+   create table ageb_zmvm as(
+select ageb_merge.*
+from ageb_merge
+inner join limite_metropolitano on
+st_intersects(limite_metropolitano.geom,ageb_merge.geom))
+
+   create table calles_zmvm as(
+select calles_merge.*
+from calles_merge
+inner join limite_metropolitano on
+st_intersects(limite_metropolitano.geom,calles_merge.geom))
+
+create index ageb_zmvm_gix on ageb_zmvm using GIST(geom);
+create index calles_zmvm_gix on calles_zmvm using GIST(geom);
+
+select count(*) from ageb_zmvm  group by id order by count(*) desc;
+select count(*) from calles_zmvm  group by id order by count(*) desc;
+
+CREATE SEQUENCE "ageb_zmvm_id_seq";
+update ageb_zmvm set id = nextval('"ageb_zmvm_id_seq"');
+
+CREATE SEQUENCE "calles_zmvm_id_seq";
+update calles_zmvm set id = nextval('"calles_zmvm_id_seq"');
+
+
+ALTER TABLE ageb_zmvm ALTER COLUMN "id" SET NOT NULL;
+ALTER TABLE ageb_zmvm ADD UNIQUE ("id");
+ALTER TABLE ageb_zmvm ADD PRIMARY KEY ("id")
+
+ALTER TABLE calles_zmvm ALTER COLUMN "id" SET NOT NULL;
+ALTER TABLE calles_zmvm ADD UNIQUE ("id");
+ALTER TABLE calles_zmvm ADD PRIMARY KEY ("id")
+
+--(9) Aquí vamos a crear una tabla que contenga la clave de la manzana (cvegeo), la geometría de la manzana y la clave de la colonia
+--en la que se encuentra la manzana:
+
+select  manzanas_zmvm.id, manzanas_zmvm.cvegeo, colonias.id_colonia,manzanas_zmvm.geom
+into manzanas_colonias
+from manzanas_zmvm 
+join colonias 
+on st_intersects(colonias.geom, manzanas_zmvm.geom);
+
+--EJERCICIO # 2: Crea un índice espacial sobre la geometría y agrega una llave primaria a la tabla que acabas de crear.
+
+create index manzanas_colonias_gix on manzanas_colonias using GIST(geom);
+
+select count(*) from manzanas_colonias  group by id order by count(*) desc;
+
+CREATE SEQUENCE "manzanas_colonias_id_seq";
+update manzanas_colonias set id = nextval('"manzanas_colonias_id_seq"');
+
+ALTER TABLE manzanas_colonias ALTER COLUMN "id" SET NOT NULL;
+ALTER TABLE manzanas_colonias ADD UNIQUE ("id");
+ALTER TABLE manzanas_coloniasADD PRIMARY KEY ("id")
+
+
+--EJERCICIO # 3: De la misma forma en que creamos la tabla manzanas_colonias, crea una tabla que una la geometría de las calles con el id de las colonias
+--recuerda crear su propio índice espacial y llave primaria.
+
+select  calles_zmvm.id, colonias.id_colonia,calles_zmvm.geom, calles_zmvm.geografico, calles_zmvm.nomvial, calles_zmvm.tipovial
+into calles_colonias
+from calles_zmvm 
+join colonias 
+on st_intersects(colonias.geom, calles_zmvm.geom);
+
+create index calles_colonias_gix on calles_colonias using GIST(geom);
+
+select count(*) from calles_colonias  group by id order by count(*) desc;
+
+CREATE SEQUENCE "calles_colonias_id_seq";
+update calles_colonias set id = nextval('"calles_colonias_id_seq"');
+
+ALTER TABLE calles_colonias ALTER COLUMN "id" SET NOT NULL;
+ALTER TABLE calles_colonias ADD UNIQUE ("id");
+ALTER TABLE calles_colonias ADD PRIMARY KEY ("id")
