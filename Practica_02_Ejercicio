@@ -66,3 +66,13 @@ group by nombreline
 create table Metro_tracks_5 as
 select st_makeline (string_to_array(geom,' ')), linea 
 from metro_stations_1
+
+-- Construyendo lás líneas individualmente, no las crea en el orden especificado
+create table mlinea_1 as
+select st_makeline(geom) as linea1
+from (select geom, nombreline, id_lineame 
+			from geo_estacion_metro 
+			where nombreline = '1'
+			order by  id_lineame) as linea --field (id_lineame, [ids in order])-
+			
+		
