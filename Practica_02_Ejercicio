@@ -35,7 +35,7 @@ from geo_estacion_metro
 group by nombreline
 
 create table metro_stations_1 as 
-select nombreline as linea, st_union(geom  order by id_lineame)
+select nombreline as linea, st_union(geom  order by id_lineame) as geom
 from geo_estacion_metro
 group by nombreline
 
@@ -49,8 +49,20 @@ SELECT DISTINCT (string_to_array(geom,' '), nombreline) AS geom, nombreline
   select st_makeline (string_to_array(geom,' ')), nombreline AS  nombreline
   from metro_stations
 
+   create table Metro_tracks_4 as
+  select st_makeline (string_to_array(geom,' ')), linea 
+  from metro_stations_1
   --
 create table Metro_tracks_4 as
 select st_makeline (string_to_array(geom,' ')), nombreline order by id_lineame 
 from metro_stations
   
+ -- 
+create table metro_stations_2 as 
+select nombreline as linea, st_union(geom  order by id_lineame) as geom
+from geo_estacion_metro
+group by nombreline
+
+create table Metro_tracks_5 as
+select st_makeline (string_to_array(geom,' ')), linea 
+from metro_stations_1
