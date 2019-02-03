@@ -28,16 +28,29 @@ select nombreline, st_union(geom)  as geom
 from geo_estacion_metro
 group by nombreline
 
+--Necesito que se cree un orden dentro de los puntos, proveniente de id_lineame
+create table metro_stations_1 as 
+select nombreline, st_union(geom) order by id_lineame,  string_to_array(geom, ',') order by id_lineame  
+from geo_estacion_metro
+group by nombreline
+
+create table metro_stations_1 as 
+select nombreline as linea, st_union(geom  order by id_lineame)
+from geo_estacion_metro
+group by nombreline
 
 -- esos puntos convertirlos en un vector
 Create table metro_stations_array as 
 SELECT DISTINCT (string_to_array(geom,' '), nombreline) AS geom, nombreline
   FROM metro_stations 
   
- --
+ -- Hace las líneas, pero tiene ciertos problemas al continuar las rutas, parece que tiene preferencia por ubicaciones en los sectores norte/sur que por los este/oeste
   create table Metro_tracks_3 as
-  select st_makeline (string_to_array(geom,' ')), nombreline AS geom, nombreline
+  select st_makeline (string_to_array(geom,' ')), nombreline AS  nombreline
   from metro_stations
 
-  
+  --
+create table Metro_tracks_4 as
+select st_makeline (string_to_array(geom,' ')), nombreline order by id_lineame 
+from metro_stations
   
