@@ -24,6 +24,20 @@ group by nombreline
 --Intento 4) Unir todos los puntos de una misma línea en una sola entidad
 
 create table metro_stations as 
-select nombreline, st_union(geom) 
+select nombreline, st_union(geom)  as geom
 from geo_estacion_metro
 group by nombreline
+
+
+-- esos puntos convertirlos en un vector
+Create table metro_stations_array as 
+SELECT DISTINCT (string_to_array(geom,' '), nombreline) AS geom, nombreline
+  FROM metro_stations 
+  
+ --
+  create table Metro_tracks_3 as
+  select st_makeline (string_to_array(geom,' ')), nombreline AS geom, nombreline
+  from metro_stations
+
+  
+  
