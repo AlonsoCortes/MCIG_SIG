@@ -1,0 +1,29 @@
+--EJERCICIO # 1: Con los puntos de las estaciones del metro de la práctica anterior, crea las líneas del metro.
+--Hint: Para crear todas las líneas tienes que agrupar los puntos
+--Intento 1) Crea las rutas por línea, pero tiene problemas al seguir un orden
+CREATE TABLE metro_tracks AS
+SELECT 
+ST_MakeLine(geom) AS routes
+FROM geo_estacion_metro 
+GROUP BY nombreline;
+
+--Intento 2) Solo crea la línea del tren ligero, con un id_lineame = 0, sin embargo, los otros valores de las estaciones existen en la tabla
+CREATE TABLE metro_tracks_1 AS
+SELECT 
+ST_MakeLine(geom) AS routes
+FROM geo_estacion_metro 
+GROUP BY id_lineame;
+
+--Intento 3) 
+
+create table metro_tracks_2 as
+select distinct nombreline, st_makeline(geom order by id_lineame)
+from geo_estacion_metro
+group by nombreline
+
+--Intento 4) Unir todos los puntos de una misma línea en una sola entidad
+
+create table metro_stations as 
+select nombreline, st_union(geom) 
+from geo_estacion_metro
+group by nombreline
