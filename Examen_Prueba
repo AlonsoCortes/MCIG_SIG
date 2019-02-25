@@ -10,10 +10,36 @@ on ac.clave = censo_2016.clave;
 --De la tabla resultante seleccionar solo las columnas s_65_g (superfice con colmenas de apis) y  s_68_a (superfice con achiote) junto con la geometría y clave que solo pertenezcan al estado de Yucatán. 
 --Representar cada cultivo como puntos y crear dos tablas: achiote_yucatan y colmenas_yucatan. **(NOTA: Usar los centroides de las áreas de control)*** (2 puntos).
 
+create table achiote_yucatan as
+select geom, cve_ent, nom_ent, cve_mun, nom_mun, s_68_a as sup_achio
+from ac_2016
+where cve_ent=('31')
+
+create table colmenas_yucatan as
+select geom, cve_ent, nom_ent, cve_mun, nom_mun, s_65_g as sup_Colm
+from ac_2016
+where cve_ent=('31')
 
 --A las tablas achiote_yucatan y colmenas_yucatan agregar una columna que se llame tipo y a través de la intersección espacial con la tabla de núcleos agrarios identificar que puntos son ejidos o comunidades. 
 --Y con el supuesto descrito en la nota anterior identificar cuáles puntos se cultivan en propiedad privada y agregar el atributo propiedad privada a la columna tipo de cada tabla donde sea el caso (1 punto).
 
+alter table achiote_yucatan 
+add tipo varchar(10) 
+
+alter table colmenas_yucatan 
+add tipo varchar(10) 
+
+insert into achiote_yucatan(tipo)
+select b.tipo
+from na_yucatan b
+join achiote_yucatan a
+on st_intersects(a.geom, b.geom);
+
+insert into colmenas_yucatan(tipo)
+select b.tipo
+from na_yucatan b
+join colmenas_yucatan a
+on st_intersects(a.geom, b.geom);
 
 --A las tablas anteriores agregar las columna area_total y calcularla **st_area**(al cacularla tendrán la superficie total por área de control) y con los datos de las columnas  s_65_g (superfice con colmenas de apis) y  s_68_a (superfice con achiote) cancula el porcentaje cultivado de cada uno por ac (1 punto).
 
