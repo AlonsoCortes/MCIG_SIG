@@ -1,0 +1,27 @@
+--Hacer un join con las tablas censo_2016 y ac a partir de las columnas clave y guárdarla como una nueva tabla que se llame ac_2016.
+-- Dentro de esta nueva tabla se encontrarán las geometrías de las áreas de control del censo y unidas a la información sobre la superficie sembrada por cultivo (1 punto).
+
+create table ac_2016 as
+select ac.geom, censo_2016.*
+from ac 
+inner join censo_2016 
+on ac.clave = censo_2016.clave;
+
+--De la tabla resultante seleccionar solo las columnas s_65_g (superfice con colmenas de apis) y  s_68_a (superfice con achiote) junto con la geometría y clave que solo pertenezcan al estado de Yucatán. 
+--Representar cada cultivo como puntos y crear dos tablas: achiote_yucatan y colmenas_yucatan. **(NOTA: Usar los centroides de las áreas de control)*** (2 puntos).
+
+
+--A las tablas achiote_yucatan y colmenas_yucatan agregar una columna que se llame tipo y a través de la intersección espacial con la tabla de núcleos agrarios identificar que puntos son ejidos o comunidades. 
+--Y con el supuesto descrito en la nota anterior identificar cuáles puntos se cultivan en propiedad privada y agregar el atributo propiedad privada a la columna tipo de cada tabla donde sea el caso (1 punto).
+
+
+--A las tablas anteriores agregar las columna area_total y calcularla **st_area**(al cacularla tendrán la superficie total por área de control) y con los datos de las columnas  s_65_g (superfice con colmenas de apis) y  s_68_a (superfice con achiote) cancula el porcentaje cultivado de cada uno por ac (1 punto).
+
+
+--Con los datos calculados en los primeros incisos responda las siguientes preguntas (4 puntos):
+   -- 1. ¿En que ejidos se cultiva achiote?    
+   --2. ¿En qué ejidos se cultiva miel?     
+   --3. ¿En que ejidos se cultivan ambos productos?    
+   --4. ¿Cual es el porcentaje cultivado de cada cultivo en Yucatán?    
+   --5. Calcule el área cultivada sobre ejido o comunidad y sobre propiedad privada de cada cultivo    
+   --6. Con base en la información anterior ¿Qué cultivo elegirías para fomentar su exportación, describe brevemente       porqué?
