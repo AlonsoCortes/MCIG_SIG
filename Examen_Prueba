@@ -1,87 +1,131 @@
---Hacer un join con las tablas censo_2016 y ac a partir de las columnas clave y guárdarla como una nueva tabla que se llame ac_2016.
--- Dentro de esta nueva tabla se encontrarán las geometrías de las áreas de control del censo y unidas a la información sobre la superficie sembrada por cultivo (1 punto).
+--Cortés Solis Alonso Azaid.
 
-create table ac_2016 as
-select ac.geom, censo_2016.*
-from ac 
-inner join censo_2016 
-on ac.clave = censo_2016.clave;
---------------------------------------------
---De la tabla resultante seleccionar solo las columnas s_65_g (superfice con colmenas de apis) y  s_68_a (superfice con achiote) junto con la geometría y clave que solo pertenezcan al estado de Yucatán. 
---Representar cada cultivo como puntos y crear dos tablas: achiote_yucatan y colmenas_yucatan. **(NOTA: Usar los centroides de las áreas de control)*** (2 puntos).
-create table achiote_yucatan as
-select st_centroid(st_union(geom)) as geom,  s_68_a as sup_achio
-from ac_2016 
-where cve_ent=('31')
-group by sup_achio;
-
-create table colmenas_yucatan as
-select st_centroid(st_union(geom)) as geom,  s_68_a as sup_colme
-from ac_2016 
-where cve_ent=('31')
-group by sup_colme;
-
---create table achiote_yucatan as
---select st_centroid(st_union(geom)) as geom, cve_ent, nom_ent, cve_mun, nom_mun, s_68_a as sup_achio
---from ac_2016 
---where cve_ent=('31')
---group by cve_ent;
-----------
---create table colmenas_yucatan as
---select geom, cve_ent, nom_ent, cve_mun, nom_mun, s_65_g as sup_Colm
---from ac_2016
---where cve_ent=('31');
-----------
---create table achiote_yucatan as
---select geom, cve_ent, nom_ent, cve_mun, nom_mun, s_68_a as sup_achio
---from ac_2016
---where cve_ent=('31')
-
---create table colmenas_yucatan as
---select geom, cve_ent, nom_ent, cve_mun, nom_mun, s_65_g as sup_Colm
---from ac_2016
---where cve_ent=('31')
-
---------------------------------------------
---A las tablas achiote_yucatan y colmenas_yucatan agregar una columna que se llame tipo y a través de la intersección espacial con la tabla de núcleos agrarios identificar que puntos son ejidos o comunidades. 
---Y con el supuesto descrito en la nota anterior identificar cuáles puntos se cultivan en propiedad privada y agregar el atributo propiedad privada a la columna tipo de cada tabla donde sea el caso (1 punto).
-
-alter table achiote_yucatan 
-add tipo varchar(10) 
-
-alter table colmenas_yucatan 
-add tipo varchar(10) 
-
-insert into achiote_yucatan(tipo)
-select b.tipo
-from na_yucatan b
-join achiote_yucatan a
-on st_intersects(a.geom, b.geom);
-
-insert into colmenas_yucatan(tipo)
-select b.tipo
-from na_yucatan b
-join colmenas_yucatan a
-on st_intersects(a.geom, b.geom);
-
---A las tablas anteriores agregar las columna area_total y calcularla **st_area**(al cacularla tendrán la superficie total por área de control) y con los datos de las columnas  s_65_g (superfice con colmenas de apis) y  s_68_a (superfice con achiote) cancula el porcentaje cultivado de cada uno por ac (1 punto).
-
-alter table achiote_yucatan 
-add  area_total varchar(10);
-
-alter table colmenas_yucatan 
-add area_total varchar(10) ;
-
-insert into achiote_yucatan(area_total)
-select st_area(geom)
-from achiote_yucatan
-
-insert into colmenas_yucatan(area_total)
-
---Con los datos calculados en los primeros incisos responda las siguientes preguntas (4 puntos):
+--Crear una base de datos que contenga tablas con la siguiente información geoespacial:
+	--Censo agropecuario 2016 (tabla censo_2016)
+	--Áreas de control del INEGI (tabla ac)
+	--Núcleos Agrarios (tabla na_yucatan)
+--La base de datos contendra la información de los cultivos de achiote y colmenas de miel apis de Yucatán
+--Crear una tabla (ac_2016) a partir de la union (join) entre las tablas de las áreas de control (ac) y el censo agropecuario 2016 (censo_2016)
+--Calcular la superficie de estos poligonos
+--De la tabla ac_2016, crear dos tablas nuevas, achiote_yucatan y colmenas_yucatan, a partir de las columnas s_65_g (superfice con colmenas de apis) y
+--- y  s_68_a (superfice con achiote), junto con la geometría y clave que solo pertenezcan al estado de Yucatán. Representar cada cultivo como puntos
+--A estas nuevas tablas agregar una columna que se llame "tipo" y a través de la intersección espacial con la tabla de núcleos agrarios (na_yucatan) identificar que puntos son ejidos o comunidades.
+--Y con el supuesto descrito en la nota anterior identificar cuáles puntos se cultivan en propiedad privada y agregar el atributo propiedad privada a la columna tipo de cada tabla donde sea el caso 
+--6. Con los datos calculados en los primeros incisos responda las siguientes preguntas (4 puntos):
    -- 1. ¿En que ejidos se cultiva achiote?    
    --2. ¿En qué ejidos se cultiva miel?     
    --3. ¿En que ejidos se cultivan ambos productos?    
    --4. ¿Cual es el porcentaje cultivado de cada cultivo en Yucatán?    
    --5. Calcule el área cultivada sobre ejido o comunidad y sobre propiedad privada de cada cultivo    
-   --6. Con base en la información anterior ¿Qué cultivo elegirías para fomentar su exportación, describe brevemente       porqué?
+   --6. Con base en la información anterior ¿Qué cultivo elegirías para fomentar su exportación, describe brevemente porqué?
+   
+--- Crear tabla a partir del join entre las tablas ac y censo 2016
+create table ac_2016 as
+select ac.geom, ac.clave as clv_1, censo_2016.*
+from ac 
+inner join censo_2016 
+on ac.clave = censo_2016.clave;
+
+	--Esta nueva tabla no tiene id, por lo que se va  crear uno
+CREATE SEQUENCE "ac_2016_id_seq";
+update ac_2016 set id = nextval('"ac_2016_id_seq"');
+
+select count(*) from censo_2016  group by id order by count(*) desc;
+
+ALTER TABLE ac_2016 ALTER COLUMN "id" SET NOT NULL;
+ALTER TABLE ac_2016 ADD UNIQUE ("id");
+ALTER TABLE ac_2016 ADD PRIMARY KEY ("id");
+
+--- Calcular área de los poligonos dentro de ac_2016
+ALTER TABLE  ac_2016 ADD COLUMN area double precision;
+
+UPDATE ac_2016 SET area=ST_AREA(geom::geometry);
+
+--- Crear tablas individuales para cada tipo de cultivo
+create table achiote_yucatan as
+select st_centroid(st_union(geom)) as geom, area,  s_68_a as area_achio 
+from ac_2016 
+where cve_ent=('31')
+group by area, area_achio;
+
+create table colmenas_yucatan as
+select st_centroid(st_union(geom)) as geom, area,  s_65_g as area_colme
+from ac_2016 
+where cve_ent=('31')
+group by area, area_colme;
+
+---Identificar la situación legal de la tierra apartir de la intersección de estos puntos con la capa na_yucatan
+--Crear nuevas columnas que tendrán esta información
+alter table achiote_yucatan 
+add tipo varchar(10);
+
+alter table colmenas_yucatan 
+add tipo varchar(10);
+--Actualizar estas columnas con la información de la tabla que intersectan
+UPDATE achiote_yucatan ac
+SET tipo = na.tipo
+from na_yucatan na
+where st_intersects ( ac.geom, na.geom);
+
+UPDATE colmenas_yucatan ac
+SET tipo = na.tipo
+from na_yucatan na
+where st_intersects ( ac.geom, na.geom);
+
+--Calcular el porcentaje de superficie cultivada para achiote y colmenas de miel
+	--Achiote
+alter table achiote_yucatan 
+ADD COLUMN porc_cult double precision;
+
+update achiote_yucatan
+set porc_cult = (cast(area_achio as float)*100)/area
+	--Colmenas
+alter table colmenas_yucatan 
+ADD COLUMN porc_cult double precision;
+
+update colmenas_yucatan
+set porc_cult = (cast(area_colme as float)*100)/area
+
+
+-- 1. ¿En que ejidos se cultiva achiote?   
+select *
+from achiote_yucatan
+where porc_cult > 0 and tipo = 'Ejido'
+ 
+--2. ¿En qué ejidos se cultiva miel?     
+select *
+from colmenas_yucatan
+where porc_cult > 0 and tipo = 'Ejido'
+
+--3. ¿En que ejidos se cultivan ambos productos?
+select *
+from achiote_yucatan ac
+inner join colmenas_yucatan co
+on ac.geom = co.geom;
+where ac.porc_cult > 0 and co.porc_cult > 0 and ac.tipo = 'Ejido'
+
+    
+--4. ¿Cual es el porcentaje cultivado de cada cultivo en Yucatán? 
+
+
+select sum(area) as area, sum(area_achio::float8) as area_cult, (sum((area_achio::float8)*100)/sum(area)::float8)  as porc_cult
+from achiote_yucatan;
+
+select sum(area) as area, sum(area_colme::float8) as area_cult, (sum((area_colme::float8)*100)/sum(area)::float8)  as porc_cult
+from colmenas_yucatan;
+
+   
+--5. Calcule el área cultivada sobre ejido o comunidad y sobre propiedad privada de cada cultivo 
+select tipo, sum(area) as area, sum(cast(area_achio as float)) as area_cult, (sum(cast(area_achio as float))*100)/sum(area) as porc_cult
+from achiote_yucatan
+group by tipo
+
+select tipo, sum(area) as area, sum(cast(area_colme as float)) as area_cult, (sum(cast(area_colme as float))*100)/sum(area) as porc_cult
+from colmenas_yucatan
+group by tiposelect tipo, sum(area) as area, sum(cast(area_colme as float)) as area_cult, (sum(cast(area_colme as float))*100)/sum(area) as porc_cult
+from colmenas_yucatan
+group by tipo
+  
+--6. Con base en la información anterior ¿Qué cultivo elegirías para fomentar su exportación, describe brevemente porqué?
+--El tipo de cultivo que se debería selecionar para fomentar es el de la miel de colmena de apis, ya que esta presenta una mayor
+--cantidad de superficie cultivada.
